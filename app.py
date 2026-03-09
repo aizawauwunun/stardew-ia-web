@@ -3,10 +3,13 @@ import os
 from flask import Flask, request, render_template_string, session, redirect, url_for
 from cerebro_ia import generar_respuesta_stardew
 
-# 1. RUTA DE LA BASE DE DATOS (AJUSTADA PARA RENDER)
-# En Render no usamos C:\Users..., usamos una ruta relativa para que funcione en Linux
+# 1. RUTA AUTOMÁTICA (Detecta dónde está el archivo app.py)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "stardew_saas.db")
+
+def ejecutar_consulta(query, params=(), fetchone=False, fetchall=False):
+    # Esto intentará abrir el archivo stardew_saas.db en tu carpeta actual
+    conn = sqlite3.connect(DB_PATH)
 
 def ejecutar_consulta(query, params=(), fetchone=False, fetchall=False):
     conn = sqlite3.connect(DB_PATH)
@@ -287,3 +290,4 @@ if __name__ == '__main__':
     puerto = int(os.environ.get("PORT", 5000))
     # Escuchamos en 0.0.0.0 para que sea accesible públicamente
     app.run(host='0.0.0.0', port=puerto)
+
