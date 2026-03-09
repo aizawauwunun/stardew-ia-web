@@ -1,10 +1,10 @@
-from flask import Flask, request, jsonify, render_template_string
+from flask import Flask, request, render_template_string
 import os
 
 app = Flask(__name__)
 
-# --- ENLACES A TUS ARCHIVOS EN GITHUB ---
-# Usamos el formato 'raw' para que Render pueda leer las imágenes directamente
+# --- ENLACES RAW DIRECTOS ---
+# Estos enlaces permiten que Render descargue la imagen directamente de GitHub
 URL_FONDO = "https://raw.githubusercontent.com/aizawauwunun/stardew-ia-web/main/fondo%20pagina%20web.png"
 URL_CHICA = "https://raw.githubusercontent.com/aizawauwunun/stardew-ia-web/main/chica%20mandarina.png"
 
@@ -14,29 +14,30 @@ DISENO_MANTENIMIENTO = f'''
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mandarina Valley</title>
+    <title>stardew-ia-web</title>
     <style>
         * {{
             margin: 0; padding: 0; box-sizing: border-box;
-            /* Esto evita que las imágenes se vean borrosas */
+            /* Mantiene los píxeles nítidos sin que se vean borrosos */
             image-rendering: pixelated;
         }}
 
         body, html {{
             width: 100%; height: 100%;
-            overflow: hidden;
             display: flex; justify-content: center; align-items: center;
-            /* Tu imagen de fondo cubriendo todo */
-            background: url('{URL_FONDO}') no-repeat center center fixed;
+            /* Tu imagen de fondo */
+            background: #4facfe url('{URL_FONDO}') no-repeat center center fixed;
             background-size: cover;
             font-family: 'Courier New', Courier, monospace;
+            overflow: hidden;
         }}
 
         .main-container {{
             display: flex; flex-direction: column; align-items: center;
-            gap: 10px;
-            animation: float 3s infinite ease-in-out;
-        }}
+            z-index: 10;
+            /* Animación de flotado suave */
+            animation: float 4s infinite ease-in-out;
+        }
 
         @keyframes float {{
             0%, 100% {{ transform: translateY(0); }}
@@ -44,33 +45,38 @@ DISENO_MANTENIMIENTO = f'''
         }}
 
         /* Tu imagen de la Chica Mandarina */
-        .avatar {{
-            width: 180px; height: auto;
+        .chica-img {{
+            width: 180px; 
+            height: auto;
             display: block;
+            /* Evita que se vea borrosa al escalar */
+            image-rendering: pixelated;
         }}
 
         /* Cuadro de diálogo estilo madera */
         .dialog-box {{
             background: #e5b061; 
             border: 6px solid #633524;
-            padding: 20px;
-            width: 350px;
+            padding: 25px;
+            width: 380px;
             text-align: center;
-            box-shadow: 8px 8px 0 rgba(0,0,0,0.3);
+            box-shadow: 10px 10px 0 rgba(0,0,0,0.3);
+            margin-top: -5px; /* Para que la chica parezca estar encima */
         }}
 
         p {{
             color: #3c2015;
             font-weight: bold;
-            font-size: 1.2em;
+            font-size: 1.3em;
             margin: 5px 0;
+            text-transform: uppercase;
             line-height: 1.2;
         }}
 
         .footer {{
             font-size: 0.8em;
             color: #633524;
-            margin-top: 10px;
+            margin-top: 15px;
             display: block;
             opacity: 0.8;
         }}
@@ -78,13 +84,12 @@ DISENO_MANTENIMIENTO = f'''
 </head>
 <body>
     <div class="main-container">
-        <img src="{URL_CHICA}" class="avatar" alt="Chica Mandarina">
+        <img src="{URL_CHICA}" class="chica-img" alt="Chica Mandarina">
         
         <div class="dialog-box">
-            <p>¡BIENVENIDOS AL VALLE!</p>
-            <p>Soy la Chica Mandarina.</p>
-            <p>Estamos trabajando para ti.</p>
-            <span class="footer">Aviso de la Chica Mandarina</span>
+            <p>¡BIENVENIDOS!</p>
+            <p>Estamos trabajando en el valle.</p>
+            <span class="footer">Aviso de la Chica Mandarina - stardew-ia-web</span>
         </div>
     </div>
 </body>
