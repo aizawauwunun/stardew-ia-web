@@ -10,6 +10,7 @@ app = Flask(__name__)
 RUTA_BASE = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(RUTA_BASE, "stardew_saas.db")
 
+# Aquí están todos los habitantes del Valle con sus personalidades
 PERSONAJES_RPG = {
     "Alex": "Deportista y egocéntrico.", "Elliott": "Escritor romántico.", "Harvey": "Médico miedoso.",
     "Sam": "Músico alegre.", "Sebastian": "Programador introvertido.", "Shane": "Rudo que ama gallinas.",
@@ -23,49 +24,119 @@ PERSONAJES_RPG = {
     "Robin": "Carpintera alegre.", "Sandy": "Dueña del Oasis.", "Vincent": "Niño juguetón.", "Willy": "Pescador experto."
 }
 
-# --- 2. DISEÑO CON MONTAÑAS Y PÁJAROS (ANÓNIMO) ---
+# --- 2. DISEÑO TOTALMENTE PIXELADO - MODO MANDARINA ---
 DISENO_MANTENIMIENTO = '''
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Valley Character AI</title>
+    <title>Valley Character AI - Modo Mandarina</title>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'VT323', monospace; }
-        .scene { position: relative; width: 100%; height: 100vh; background: linear-gradient(to bottom, #4facfe 0%, #00f2fe 100%); z-index: -1; }
-        .mountains { position: absolute; bottom: 0; width: 100%; height: 45vh; background-color: #3e2712; clip-path: polygon(0% 100%, 0% 25%, 10% 45%, 20% 20%, 30% 55%, 40% 15%, 50% 40%, 60% 20%, 70% 60%, 80% 10%, 90% 45%, 100% 25%, 100% 100%); }
-        .cloud { position: absolute; background: white; border-radius: 50px; opacity: 0.8; animation: moveClouds linear infinite; }
-        .cloud::after, .cloud::before { content: ''; position: absolute; background: white; border-radius: 50px; }
-        .cloud1 { width: 100px; height: 40px; top: 15%; animation-duration: 35s; }
-        .cloud1::after { width: 50px; height: 50px; top: -25px; left: 15px; }
-        .cloud2 { width: 140px; height: 50px; top: 30%; animation-duration: 50s; animation-delay: -10s; }
-        .cloud2::after { width: 70px; height: 70px; top: -35px; left: 30px; }
-        @keyframes moveClouds { from { left: -200px; } to { left: 100%; } }
-        .birds { position: absolute; width: 60px; animation: fly 25s linear infinite; }
-        @keyframes fly { from { left: 110%; top: 20%; } to { left: -100px; top: 25%; } }
-        .main-container { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; width: 90%; max-width: 500px; }
-        .stardew-box { background-color: #fcead3; border: 6px solid #5d3a1a; outline: 4px solid #b26c39; box-shadow: 8px 8px 0px rgba(0,0,0,0.3); padding: 35px; text-align: center; position: relative; }
-        .stardew-box::before { content: ""; position: absolute; top: 4px; left: 4px; right: 4px; bottom: 4px; border: 2px solid #e7c294; pointer-events: none; }
-        h1 { color: #5d3a1a; font-size: 3.5rem; margin: 0; text-shadow: 3px 3px #e7c294; text-transform: uppercase; }
-        p { color: #3e2712; font-size: 1.8rem; line-height: 1.1; margin: 15px 0; }
-        .status-tag { background: #b26c39; color: #fcead3; border: 3px solid #5d3a1a; padding: 8px 15px; font-size: 1.4rem; display: inline-block; margin-top: 15px; }
+        html, body {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; font-family: 'VT323', monospace;
+            background-color: #4facfe;
+        }
+
+        img, .pixel-bg, .pixel-mountains, .pixel-tree, .pixel-flower, .mandarin-ornament, .mandarin-bird {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        .pixel-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('https://stardewvalleywiki.com/mediawiki/images/5/5a/Stardew_Valley_Map.png');
+            background-size: cover; background-position: center; z-index: -3; filter: blur(2px) brightness(0.8);
+        }
+
+        .pixel-mountains {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 50%;
+            background-image: url('https://stardewvalleywiki.com/mediawiki/images/4/4c/Background_Mountains.png');
+            background-size: cover; background-position: bottom center; background-repeat: repeat-x; z-index: -2;
+        }
+
+        .pixel-tree {
+            position: absolute; width: 48px; height: 64px;
+            background-image: url('https://stardewvalleywiki.com/mediawiki/images/3/3a/Oak_Tree_Stage_5.png');
+            background-size: contain; background-repeat: no-repeat; z-index: -1;
+        }
+        
+        .pixel-tree::after {
+            content: ""; position: absolute; top: 10px; left: 10px; width: 28px; height: 28px;
+            background-image: radial-gradient(#ff9800 2px, transparent 3px);
+            background-size: 8px 8px;
+        }
+
+        .pixel-flower {
+            position: absolute; width: 16px; height: 16px;
+            background-size: contain; background-repeat: no-repeat; z-index: -1;
+        }
+
+        .mandarin-bird {
+            position: absolute; width: 24px; height: 18px;
+            background-image: radial-gradient(#ff9800 80%, transparent 85%);
+            z-index: 10; opacity: 0.9;
+            box-shadow: -6px -2px 0px 0px #aaa, 6px -2px 0px 0px #aaa;
+            animation: mandarin-fly 15s linear infinite, mandarin-wing-flap 0.3s steps(2, end) infinite;
+        }
+
+        @keyframes mandarin-wing-flap { to { box-shadow: -6px 2px 0px 0px #999, 6px 2px 0px 0px #999; } }
+        @keyframes mandarin-fly { 0% { transform: translate(-50px, 20%); } 100% { transform: translate(110vw, 25%); } }
+
+        .dialog-container {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            width: 100%; height: 100%; z-index: 20;
+        }
+
+        .robin-icon {
+            width: 96px; height: 96px; margin-bottom: 20px;
+            border: 4px solid #633524; background-color: #e5b061;
+            padding: 5px; box-shadow: 5px 5px 0px rgba(0,0,0,0.5);
+        }
+
+        .dialog-box {
+            background-color: #e5b061; border: 6px solid #633524;
+            padding: 25px; width: 480px; max-width: 90%;
+            box-shadow: 8px 8px 0px rgba(0,0,0,0.6); text-align: center; position: relative;
+        }
+
+        .dialog-box::before {
+            content: ""; position: absolute; top: 4px; left: 4px; right: 4px; bottom: 4px;
+            border: 3px solid #ffde9b; pointer-events: none;
+        }
+
+        .mandarin-ornament {
+            position: absolute; width: 20px; height: 20px; z-index: 5;
+            background-image: radial-gradient(#ff9800 80%, transparent 85%);
+            border-radius: 50%; box-shadow: 0px -4px 0px 0px #4caf50;
+        }
+
+        .dialog-box p { color: #3c2015; font-size: 1.8em; margin: 0; line-height: 1.4; }
+        .dialog-box h2 { font-size: 2.2em; color: #6d4c41; margin: 0 0 10px 0; }
     </style>
 </head>
 <body>
-    <div class="scene">
-        <div class="cloud cloud1"></div>
-        <div class="cloud cloud2"></div>
-        <svg class="birds" viewBox="0 0 100 60"><path d="M10,30 Q40,10 50,30 Q60,10 90,30" stroke="#3e2712" stroke-width="6" fill="none"/></svg>
-        <div class="mountains"></div>
-    </div>
-    <div class="main-container">
-        <div class="stardew-box">
-            <img src="https://stardewvalleywiki.com/mediawiki/images/4/45/Junimo.png" width="80" style="margin-bottom:10px;">
-            <h1>¡AVISO DE ROBIN!</h1>
-            <p>El equipo técnico está sincronizando los mods con la IA.</p>
-            <div class="status-tag">Sincronizando conexión local...</div>
-            <p style="font-size: 1rem; opacity: 0.7; margin-top: 20px;">Página privada hasta nuevo aviso.</p>
+    <div class="pixel-bg"></div>
+    <div class="pixel-mountains"></div>
+    
+    <div class="pixel-tree" style="left: 10%; bottom: 15%;"></div>
+    <div class="pixel-tree" style="left: 28%; bottom: 20%;"></div>
+    <div class="pixel-tree" style="right: 18%; bottom: 18%;"></div>
+    
+    <div class="pixel-flower" style="left: 18%; bottom: 10%; background-image: url('https://stardewvalleywiki.com/mediawiki/images/f/f1/Tulip.png');"></div>
+    <div class="pixel-flower" style="right: 20%; bottom: 11%; background-image: url('https://stardewvalleywiki.com/mediawiki/images/d/d7/Blue_Jazz.png');"></div>
+
+    <div class="mandarin-bird" style="top: 25%; animation-delay: 1s;"></div>
+    <div class="mandarin-bird" style="top: 45%; animation-delay: 10s;"></div>
+
+    <div class="dialog-container">
+        <img src="https://stardewvalleywiki.com/mediawiki/images/d/df/Chica_Mandarina_Retrato.png" class="robin-icon" alt="Chica Mandarina">
+        <div class="dialog-box">
+            <div class="mandarin-ornament" style="top: -10px; left: -10px;"></div>
+            <div class="mandarin-ornament" style="top: -10px; right: -10px;"></div>
+            <h2>AVISO DE LA CHICA MANDARINA</h2>
+            <p>¡Holi! El equipo técnico está usando sus picos pixelados para plantar árboles con mandarinas y flores. ¡Vuelve pronto!</p>
         </div>
     </div>
 </body>
@@ -80,37 +151,9 @@ def modo_privado():
 
 @app.route('/')
 def home():
-    return "Stardew Chat SaaS Activo"
+    return "Stardew Chat SaaS Activo - Modo Mandarina"
 
-@app.route('/registro', methods=['POST'])
-def registro():
-    d = request.json
-    h = generate_password_hash(d['password'])
-    try:
-        with sqlite3.connect(DB_PATH) as c:
-            c.execute("INSERT INTO usuarios (id, password_hash) VALUES (?,?)", (d['usuario'], h))
-        return jsonify({"mensaje": "¡Bienvenido al Valle!"}), 201
-    except: return jsonify({"error": "Usuario ya existe"}), 400
-
-@app.route('/login', methods=['POST'])
-def login():
-    d = request.json
-    with sqlite3.connect(DB_PATH) as c:
-        u = c.execute("SELECT password_hash, plan, fecha_vencimiento FROM usuarios WHERE id=?", (d['usuario'],)).fetchone()
-    if u and check_password_hash(u[0], d['password']):
-        return jsonify({"mensaje": "Logueado", "plan": u[1]}), 200
-    return jsonify({"error": "Fallo de login"}), 401
-
-@app.route('/chat', methods=['POST'])
-def chat():
-    d = request.json
-    user, npc, msg = d['user'], d['npc'], d['msg']
-    perfil = PERSONAJES_RPG.get(npc, "Aldeano")
-    res = f"({npc}): {msg}... ¡Jeje! Soy {perfil}"
-    return jsonify({"reply": res})
-
-# --- 4. ARREGLO FINAL DEL PUERTO ---
+# --- 4. CONFIGURACIÓN DEL PUERTO ---
 if __name__ == '__main__':
-    import os
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
