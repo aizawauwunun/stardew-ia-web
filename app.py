@@ -1,5 +1,9 @@
 from flask import Flask, request, render_template_string, session, redirect, url_for
 import os
+# Conexión con mi cerebro de IA de Stardew
+from cerebro_ia import generar_respuesta_stardew
+
+app = Flask(__name__)
 
 app = Flask(__name__)
 # Llave de seguridad para las sesiones
@@ -233,12 +237,15 @@ def chat(name):
 
     if request.method == 'POST':
         user_msg = request.form.get('msg')
-        # Lógica de mensajes: Solo sumamos si no es admin/premium
+        
+        # 1. LLAMADA A LA IA (Esta es la única que debe quedar)
+        respuesta = generar_respuesta_stardew(user_msg)
+        
+        # 2. Lógica de mensajes
         if u['rango'] == "free":
             u['mensajes_usados'] += 1
         
-        # Respuesta Temporal (Aquí es donde conectarás la API de IA más adelante)
-        respuesta = f"Oh, hola {session['user']}. He estado trabajando en la granja y me pillas justo descansando. ¡Es un buen día!"
+        # --- ¡BORRÉ LA LÍNEA QUE DECÍA "Oh, hola..." PARA QUE NO TAPE A LA IA! ---
 
     return render_template_string(f'''
         {ESTILOS}
@@ -261,5 +268,4 @@ def chat(name):
             <a href="/npc/{name}" style="color:#633524; font-size:0.7em; display:block; margin-top:10px;">Atrás</a>
         </div>
     ''')
-if __name__ == '__main__':
-    app.run(debug=True)
+
