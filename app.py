@@ -10,14 +10,16 @@ RUTA_BASE = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(RUTA_BASE, "stardew_saas.db")
 
 PERSONAJES_RPG = {
-    "Alex": "Deportista y egocéntrico.", "Elliott": "Escritor romántico.", "Harvey": "Médico miedoso.",
-    "Sam": "Músico alegre.", "Sebastian": "Programador introvertido.", "Shane": "Rudo que ama gallinas.",
-    "Abigail": "Aventurera mística.", "Emily": "Espiritual y costurera.", "Haley": "Fotógrafa de moda.",
-    "Leah": "Artista del bosque.", "Maru": "Científica inventora.", "Penny": "Tímida y educada.",
+    "Alex": "Deportista y egocéntrico.", "Elliott": "Escritor romántico.", 
+    "Harvey": "Médico miedoso.", "Sam": "Músico alegre.", 
+    "Sebastian": "Programador introvertido.", "Shane": "Rudo que ama gallinas.",
+    "Abigail": "Aventurera mística.", "Emily": "Espiritual y costurera.", 
+    "Haley": "Fotógrafa de moda.", "Leah": "Artista del bosque.", 
+    "Maru": "Científica inventora.", "Penny": "Tímida y educada.",
     "Robin": "Carpintera alegre.", "Willy": "Pescador experto."
 }
 
-# --- 2. DISEÑO GARANTIZADO ---
+# --- 2. DISEÑO ---
 DISENO_MANTENIMIENTO = '''
 <!DOCTYPE html>
 <html lang="es">
@@ -85,4 +87,3 @@ def home():
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
-
