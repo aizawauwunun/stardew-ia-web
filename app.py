@@ -5,18 +5,17 @@ from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-# Esto busca la carpeta donde esté el archivo automáticamente, sin usar tu nombre
+
+# --- 1. CONFIGURACIÓN DE RUTAS Y BASE DE DATOS ---
+# Esto asegura que la base de datos se cree en la carpeta correcta de Render
 RUTA_BASE = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(RUTA_BASE, "stardew_saas.db")
-# --- 1. DICCIONARIO DE PERSONAJES (Filtrado) ---
+
 PERSONAJES_RPG = {
-    # Solteros
     "Alex": "Deportista y egocéntrico.", "Elliott": "Escritor romántico.", "Harvey": "Médico miedoso.",
     "Sam": "Músico alegre.", "Sebastian": "Programador introvertido.", "Shane": "Rudo que ama gallinas.",
-    # Solteras
     "Abigail": "Aventurera mística.", "Emily": "Espiritual y costurera.", "Haley": "Fotógrafa de moda.",
     "Leah": "Artista del bosque.", "Maru": "Científica inventora.", "Penny": "Tímida y educada.",
-    # No disponibles para matrimonio (Filtrados: sin Krobus, Rasmodius ni Enano)
     "Caroline": "Ama su té.", "Clint": "Herrero solitario.", "Demetrius": "Científico formal.",
     "Evelyn": "Abuela cariñosa.", "George": "Abuelo gruñón.", "Gus": "Cocinero del salón.", 
     "Jas": "Niña tímida.", "Jodi": "Madre dedicada.", "Kent": "Ex-militar serio.", 
@@ -25,111 +24,133 @@ PERSONAJES_RPG = {
     "Robin": "Carpintera alegre.", "Sandy": "Dueña del Oasis.", "Vincent": "Niño juguetón.", "Willy": "Pescador experto."
 }
 
-# --- 2. BLOQUE DE PRIVACIDAD / MANTENIMIENTO ---
-@app.before_request
-def modo_privado():
-    if request.path.startswith('/static'): return None
-    return '''
-    <body style="background:#2e7d32; color:white; font-family:'Courier New', monospace; text-align:center; padding:100px;">
-        <img src="https://stardewvalleywiki.com/mediawiki/images/4/45/Junimo.png" width="100">
-        <h1>🚜 EL VALLE ESTÁ EN CONSTRUCCIÓN</h1>
-        <p>Alexia está sincronizando los mods de SMAPI con la Inteligencia Artificial.</p>
-        <div style="border: 2px dashed #fdd835; display:inline-block; padding: 20px; margin-top:20px;">
-            ESTADO: <b>Configurando conexión local con el juego...</b>
-        </div>
-        <p style="margin-top:50px; font-size: 0.8em; opacity: 0.7;">Página privada hasta nuevo aviso.</p>
-    </body>
-    ''', 503
-
-# --- 3. INTERFAZ WEB ---
-HTML_WEB = '''
+# --- 2. DISEÑO "AMONONADO" CON MONTAÑAS Y PÁJAROS ---
+# Este es el diseño que se verá mientras la página esté en mantenimiento
+DISENO_MANTENIMIENTO = '''
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <title>Stardew Chat SaaS</title>
+    <meta charset="UTF-8">
+    <title>Valley Character AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <style>
-        body { background: #2e7d32; font-family: 'Courier New', monospace; color: white; display: flex; flex-direction: column; align-items: center; }
-        .box { background: #8d6e63; border: 4px solid #fdd835; width: 450px; padding: 20px; border-radius: 10px; margin-top: 20px; }
-        #chat-section { display: none; background: #f5f5dc; color: #5d4037; padding: 15px; }
-        #logs { height: 300px; overflow-y: auto; background: white; padding: 10px; border: 2px solid #8d6e63; margin-bottom: 10px; }
-        .premium-tag { background: #fdd835; color: #5d4037; padding: 2px 5px; font-weight: bold; border-radius: 3px; }
-        input, select { width: 95%; padding: 8px; margin-bottom: 10px; }
-        button { width: 100%; padding: 10px; background: #4caf50; color: white; border: none; cursor: pointer; font-weight: bold; }
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'VT323', monospace; }
+        
+        /* CIELO Y FONDO */
+        .scene {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            background: linear-gradient(to bottom, #4facfe 0%, #00f2fe 100%);
+            z-index: -1;
+        }
+
+        /* MONTAÑAS TIPO PIXEL */
+        .mountains {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 45vh;
+            background-color: #3e2712;
+            clip-path: polygon(0% 100%, 0% 25%, 10% 45%, 20% 20%, 30% 55%, 40% 15%, 50% 40%, 60% 20%, 70% 60%, 80% 10%, 90% 45%, 100% 25%, 100% 100%);
+        }
+
+        /* NUBES ANIMADAS */
+        .cloud {
+            position: absolute;
+            background: white;
+            border-radius: 50px;
+            opacity: 0.8;
+            animation: moveClouds linear infinite;
+        }
+        .cloud::after, .cloud::before { content: ''; position: absolute; background: white; border-radius: 50px; }
+        .cloud1 { width: 100px; height: 40px; top: 15%; animation-duration: 35s; }
+        .cloud1::after { width: 50px; height: 50px; top: -25px; left: 15px; }
+        .cloud2 { width: 140px; height: 50px; top: 30%; animation-duration: 50s; animation-delay: -10s; }
+        .cloud2::after { width: 70px; height: 70px; top: -35px; left: 30px; }
+
+        @keyframes moveClouds {
+            from { left: -200px; }
+            to { left: 100%; }
+        }
+
+        /* PÁJAROS VOLANDO */
+        .birds {
+            position: absolute;
+            width: 60px;
+            animation: fly 25s linear infinite;
+        }
+        @keyframes fly {
+            from { left: 110%; top: 20%; }
+            to { left: -100px; top: 25%; }
+        }
+
+        /* CUADRO DE DIÁLOGO ESTILO STARDEW */
+        .main-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            width: 90%;
+            max-width: 500px;
+        }
+        .stardew-box {
+            background-color: #fcead3;
+            border: 6px solid #5d3a1a;
+            outline: 4px solid #b26c39;
+            box-shadow: 8px 8px 0px rgba(0,0,0,0.3);
+            padding: 35px;
+            text-align: center;
+            position: relative;
+        }
+        .stardew-box::before {
+            content: ""; position: absolute; top: 4px; left: 4px; right: 4px; bottom: 4px;
+            border: 2px solid #e7c294; pointer-events: none;
+        }
+        h1 { color: #5d3a1a; font-size: 3.5rem; margin: 0; text-shadow: 3px 3px #e7c294; text-transform: uppercase; }
+        p { color: #3e2712; font-size: 1.8rem; line-height: 1.1; margin: 15px 0; }
+        .status-tag {
+            background: #b26c39; color: #fcead3; border: 3px solid #5d3a1a;
+            padding: 8px 15px; font-size: 1.4rem; display: inline-block; margin-top: 15px;
+        }
     </style>
 </head>
 <body>
-    <div id="login-section" class="box">
-        <h2 style="text-align:center">LOGIN VALLE</h2>
-        <input type="text" id="u" placeholder="Usuario">
-        <input type="password" id="p" placeholder="Contraseña">
-        <button onclick="auth('login')">ENTRAR</button>
-        <button onclick="auth('registro')" style="background:#795548; margin-top:10px;">REGISTRARSE</button>
+    <div class="scene">
+        <div class="cloud cloud1"></div>
+        <div class="cloud cloud2"></div>
+        <svg class="birds" viewBox="0 0 100 60">
+            <path d="M10,30 Q40,10 50,30 Q60,10 90,30" stroke="#3e2712" stroke-width="6" fill="none"/>
+        </svg>
+        <div class="mountains"></div>
     </div>
 
-    <div id="chat-section" class="box">
-        <div style="margin-bottom:10px;"><b>Usuario:</b> <span id="userName"></span> <span id="userPlan" class="premium-tag"></span></div>
-        <select id="npc">
-            <optgroup label="Candidatos (Solteros)">
-                <option value="Alex">Alex</option><option value="Elliott">Elliott</option><option value="Harvey">Harvey</option>
-                <option value="Sam">Sam</option><option value="Sebastian">Sebastian</option><option value="Shane">Shane</option>
-            </optgroup>
-            <optgroup label="Candidatas (Solteras)">
-                <option value="Abigail">Abigail</option><option value="Emily">Emily</option><option value="Haley">Haley</option>
-                <option value="Leah">Leah</option><option value="Maru">Maru</option><option value="Penny">Penny</option>
-            </optgroup>
-            <optgroup label="Otros Habitantes">
-                <option value="Caroline">Caroline</option><option value="Clint">Clint</option><option value="Demetrius">Demetrius</option>
-                <option value="Evelyn">Evelyn</option><option value="George">George</option><option value="Gus">Gus</option>
-                <option value="Jas">Jas</option><option value="Jodi">Jodi</option><option value="Kent">Kent</option>
-                <option value="Leo">Leo</option><option value="Lewis">Lewis</option><option value="Linus">Linus</option>
-                <option value="Marnie">Marnie</option><option value="Pam">Pam</option><option value="Pierre">Pierre</option>
-                <option value="Robin">Robin</option><option value="Sandy">Sandy</option><option value="Vincent">Vincent</option>
-                <option value="Willy">Willy</option>
-            </optgroup>
-        </select>
-        <div id="logs"></div>
-        <input type="text" id="m" placeholder="Escribe un mensaje...">
-        <button onclick="send()">ENVIAR MENSAJE</button>
+    <div class="main-container">
+        <div class="stardew-box">
+            <img src="https://stardewvalleywiki.com/mediawiki/images/4/45/Junimo.png" width="80" style="margin-bottom:10px;">
+            <h1>¡AVISO DE ROBIN!</h1>
+            <p>Alexia está sincronizando los mods con la IA.</p>
+            <div class="status-tag">Sincronizando conexión local...</div>
+            <p style="font-size: 1rem; opacity: 0.7; margin-top: 20px;">Página privada hasta nuevo aviso.</p>
+        </div>
     </div>
-
-    <script>
-        let curUser = "";
-        async function auth(t) {
-            const res = await fetch('/'+t, {
-                method:'POST', headers:{'Content-Type':'application/json'},
-                body: JSON.stringify({usuario: document.getElementById('u').value, password: document.getElementById('p').value})
-            });
-            const data = await res.json();
-            if(res.ok) {
-                if(t==='login') {
-                    curUser = document.getElementById('u').value;
-                    document.getElementById('login-section').style.display='none';
-                    document.getElementById('chat-section').style.display='block';
-                    document.getElementById('userName').innerText = curUser;
-                    document.getElementById('userPlan').innerText = data.plan;
-                }
-                alert(data.mensaje);
-            } else alert(data.error);
-        }
-
-        async function send() {
-            const m = document.getElementById('m');
-            const res = await fetch('/chat', {
-                method:'POST', headers:{'Content-Type':'application/json'},
-                body: JSON.stringify({msg: m.value, user: curUser, npc: document.getElementById('npc').value})
-            });
-            const data = await res.json();
-            document.getElementById('logs').innerHTML += `<p><b>Tú:</b> ${m.value}</p><p style="color:red"><b>IA:</b> ${data.reply}</p>`;
-            m.value = "";
-        }
-    </script>
 </body>
 </html>
 '''
 
-# --- 4. RUTAS DEL SISTEMA ---
+# --- 3. RUTAS Y LÓGICA DEL SISTEMA ---
+
+@app.before_request
+def modo_privado():
+    # Mientras estemos "amononando", todas las rutas mostrarán el aviso de Robin
+    if request.path.startswith('/static'): return None
+    # Si quieres entrar al chat real, comenta la línea de abajo después
+    return render_template_string(DISENO_MANTENIMIENTO), 503
+
 @app.route('/')
-def home(): return render_template_string(HTML_WEB)
+def home():
+    return "Stardew Chat SaaS Activo" # Esto no se verá mientras esté el modo_privado arriba
 
 @app.route('/registro', methods=['POST'])
 def registro():
@@ -176,6 +197,9 @@ def chat():
         c.execute("UPDATE usuarios SET mensajes_hoy = ?, ultima_actividad = ? WHERE id=?", (m_hoy + 1, hoy, user))
     return jsonify({"reply": res})
 
+# --- 4. ARREGLO TÉCNICO PARA RENDER ---
 if __name__ == '__main__':
-    # Esto hace que la página sea 100% privada para tu PC
-    app.run(host='127.0.0.1', port=5000)
+    # Esto soluciona el error "No open ports detected"
+    import os
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
