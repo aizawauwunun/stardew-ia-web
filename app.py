@@ -100,8 +100,16 @@ def nuevo_hijo():
     if request.method == 'POST':
         nombre = request.form['nombre']
         personalidad = request.form['personalidad']
+        
+        # 1. Guardar en la base de datos SQL
         ejecutar_consulta("INSERT INTO hijos_custom (usuario, nombre, personalidad) VALUES (?, ?, ?)", 
                           (session['user'], nombre, personalidad))
+        
+        # 2. ENSEÑARLE A LA IA: Guardamos la "semilla" del personaje en datos.txt
+        with open('datos.txt', 'a', encoding='utf-8') as f:
+            f.write(f"\n{nombre} ({personalidad}): ¡Hola! Acabo de llegar a la granja.\n")
+            f.write(f"{nombre} ({personalidad}): Soy una persona {personalidad}.\n")
+        
         return redirect(url_for('perfiles'))
 
     return render_template_string(f'''
@@ -110,7 +118,7 @@ def nuevo_hijo():
             <h2>Nueva llegada a la granja</h2>
             <form method="POST">
                 <input name="nombre" placeholder="Nombre del niño/a" required>
-                <textarea name="personalidad" placeholder="¿Cómo es?" style="width:100%; height:120px; border:4px solid #633524; background:#fff3d6; padding:10px; margin-bottom:10px;" required></textarea>
+                <textarea name="personalidad" placeholder="Ej: Es valiente y le gusta explorar" style="width:100%; height:120px; border:4px solid #633524; background:#fff3d6; padding:10px; margin-bottom:10px;" required></textarea>
                 <button type="submit" class="btn" style="background:#bdecb6;">Confirmar Nacimiento</button>
             </form>
             <a href="/perfiles">Cancelar</a>
@@ -290,4 +298,5 @@ def admin_panel():
 if __name__ == '__main__':
     inicializar_tablas() # Crea las tablas antes de arrancar
     app.run(debug=True)
+
 
