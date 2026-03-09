@@ -212,7 +212,11 @@ def npc(name):
 
 @app.route('/chat/<name>', methods=['GET', 'POST'])
 def chat(name):
-    if 'user' not in session: return redirect(url_for('login'))
+    # Aseguramos sesión para local
+    if 'user' not in session:
+        session['user'] = "Alexia"
+        session['plan'] = "admin"
+
     char = HABITANTES.get(name.lower())
     if not char:
         hijo = ejecutar_consulta("SELECT nombre FROM hijos_custom WHERE nombre = ?", (name,), fetchone=True)
@@ -220,32 +224,37 @@ def chat(name):
             char = {"nombre": hijo[0], "color": "#ffcc00"}
         else:
             return redirect(url_for('perfiles'))
+
     respuesta = ""
-    user_data = ejecutar_consulta("SELECT plan, mensajes_hoy FROM usuarios WHERE id = ?", (session['user'],), fetchone=True)
-    if not user_data: return redirect(url_for('login'))
-    plan, mensajes_hoy = user_data[0], user_data[1]
-    limite = 10 if plan == "free" else 9999
-    bloqueado = mensajes_hoy >= limite
-    if request.method == 'POST' and not bloqueado:
+    # Simplificamos para la prueba: quitamos el límite de mensajes por ahora
+    limite = 9999 
+    mensajes_hoy = 0 
+    bloqueado = False
+
+    if request.method == 'POST':
         user_msg = request.form.get('msg')
+        # Llama a tu Cerebro IA
         respuesta = generar_respuesta_stardew(user_msg, name)
-        ejecutar_consulta("INSERT INTO memoria_chat (usuario, npc, mensaje, respuesta_ia) VALUES (?, ?, ?, ?)", (session['user'], name, user_msg, respuesta))
-        ejecutar_consulta("UPDATE usuarios SET mensajes_hoy = mensajes_hoy + 1 WHERE id = ?", (session['user'],))
+        # Guarda el recuerdo en la DB
+        ejecutar_consulta("INSERT INTO memoria_chat (usuario, npc, mensaje, respuesta_ia) VALUES (?, ?, ?, ?)", 
+                          (session['user'], name, user_msg, respuesta))
+
     return render_template_string(f'''
         {ESTILOS}
         <div class="dialog-box">
             <h3 style="color:{char['color']}">{char['nombre']}</h3>
-            <p style="font-size:0.7em;">Mensajes hoy: {mensajes_hoy}/{limite if limite < 9000 else "∞"}</p>
             <div style="background:#fff3d6; padding:15px; margin:15px 0; border:2px solid #633524; text-align:left;">
                 {respuesta if respuesta else "*(Te mira esperando...)*"}
             </div>
-            {"<p style='color:red;'>¡Has agotado tus mensajes diarios!</p>" if bloqueado else 
-            '<form method="POST"><input name="msg" placeholder="Dile algo..." required><button type="submit" class="btn">Enviar</button></form>'}
+            <form method="POST">
+                <input name="msg" placeholder="Dile algo..." required>
+                <button type="submit" class="btn">Enviar</button>
+            </form>
             <a href="/perfiles">Atrás</a>
         </div>
     ''')
-
-
+    
+    
 @app.route('/logout')
 def logout():
     session.clear()
@@ -278,6 +287,3 @@ if __name__ == '__main__':
     puerto = int(os.environ.get("PORT", 5000))
     # Escuchamos en 0.0.0.0 para que sea accesible públicamente
     app.run(host='0.0.0.0', port=puerto)
-
-
-
