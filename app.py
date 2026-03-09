@@ -35,8 +35,9 @@ def raw(link):
 URL_FONDO = raw("https://github.com/aizawauwunun/stardew-ia-web/blob/main/fondo%20pagina%20web.png")
 URL_CHICA = raw("https://github.com/aizawauwunun/stardew-ia-web/blob/main/chica%20mandarina.png")
 
-# --- 3. GRAN BASE DE DATOS DE HABITANTES COMPLETA ---
+# --- 3. GRAN BASE DE DATOS DE 41 HABITANTES (HUMANOS Y ESPECIALES) ---
 HABITANTES = {
+    # Solteros y vecinos estándar (Los que ya tenías)
     "alex": {"nombre": "Alex", "desc": "Deportista y egocéntrico.", "img": raw("https://github.com/aizawauwunun/stardew-ia-web/blob/main/120px-Alex.png"), "color": "#4287f5"},
     "haley": {"nombre": "Haley", "desc": "Fotógrafa de moda.", "img": raw("https://github.com/aizawauwunun/stardew-ia-web/blob/main/120px-Haley.png"), "color": "#f2a1c8"},
     "harvey": {"nombre": "Harvey", "desc": "Médico miedoso.", "img": raw("https://github.com/aizawauwunun/stardew-ia-web/blob/main/120px-Harvey.png"), "color": "#5c8a5c"},
@@ -69,9 +70,18 @@ HABITANTES = {
     "vincent": {"nombre": "Vincent", "desc": "Niño juguetón.", "img": raw("https://github.com/aizawauwunun/stardew-ia-web/blob/main/Vincent.png"), "color": "#e74c3c"},
     "willy": {"nombre": "Willy", "desc": "Pescador experto.", "img": raw("https://github.com/aizawauwunun/stardew-ia-web/blob/main/Willy_Happy.png"), "color": "#2980b9"},
     "marlon": {"nombre": "Marlon", "desc": "Cazador de monstruos.", "img": raw("https://github.com/aizawauwunun/stardew-ia-web/blob/main/Marlon.png"), "color": "#27ae60"},
-    "mr_qi": {"nombre": "Mr. Qi", "desc": "Misterioso y poderoso.", "img": raw("https://github.com/aizawauwunun/stardew-ia-web/blob/main/Mr._Qi.png"), "color": "#2c3e50"}
-}
+    "mr_qi": {"nombre": "Mr. Qi", "desc": "Misterioso y poderoso.", "img": raw("https://github.com/aizawauwunun/stardew-ia-web/blob/main/Mr._Qi.png"), "color": "#2c3e50"},
 
+    # --- NUEVOS PERSONAJES PARA LLEGAR A 41 ---
+    "gunther": {"nombre": "Gunther", "desc": "Encargado del museo.", "img": raw("https://github.com/aizawauwunun/stardew-ia-web/blob/main/Gunther.png"), "color": "#2980b9"},
+    "morris": {"nombre": "Morris", "desc": "Gerente de JojaMart.", "img": raw("https://github.com/aizawauwunun/stardew-ia-web/blob/main/Morris.png"), "color": "#2c3e50"},
+    "bouncer": {"nombre": "Gorila", "desc": "Vigilante del Casino.", "img": raw("https://github.com/aizawauwunun/stardew-ia-web/blob/main/Bouncer.png"), "color": "#111"},
+    "governor": {"nombre": "Gobernador", "desc": "Visitante del banquete.", "img": raw("https://github.com/aizawauwunun/stardew-ia-web/blob/main/Governor.png"), "color": "#714a36"},
+    "birdie": {"nombre": "Birdie", "desc": "Vive en la costa.", "img": raw("https://github.com/aizawauwunun/stardew-ia-web/blob/main/Birdie.png"), "color": "#d35400"},
+    "professor_snail": {"nombre": "Prof. Snail", "desc": "Arqueólogo de la isla.", "img": raw("https://github.com/aizawauwunun/stardew-ia-web/blob/main/Professor_Snail.png"), "color": "#5c8a5c"},
+    "gil": {"nombre": "Gil", "desc": "Socio del Gremio.", "img": raw("https://github.com/aizawauwunun/stardew-ia-web/blob/main/Gil.png"), "color": "#888"},
+    "fizz": {"nombre": "Fizz", "desc": "Vendedor especial.", "img": raw("https://github.com/aizawauwunun/stardew-ia-web/blob/main/Fizz.png"), "color": "#4facfe"}
+}
 # --- ESTILOS ---
 ESTILOS = f'''
 <style>
@@ -238,3 +248,4 @@ if __name__ == '__main__':
     puerto = int(os.environ.get("PORT", 5000))
     # Escuchamos en 0.0.0.0 para que sea accesible públicamente
     app.run(host='0.0.0.0', port=puerto)
+
