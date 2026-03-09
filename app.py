@@ -112,12 +112,18 @@ def nuevo_hijo():
     if request.method == 'POST':
         nombre = request.form['nombre']
         personalidad = request.form['personalidad']
+        
+        # Guardamos en la DB (esto es persistente si usas un disco en Render o si no se reinicia el servidor)
         ejecutar_consulta("INSERT INTO hijos_custom (usuario, nombre, personalidad) VALUES (?, ?, ?)", 
                           (session['user'], nombre, personalidad))
-        with open('datos.txt', 'a', encoding='utf-8') as f:
-            f.write(f"\n{nombre} ({personalidad}): ¡Hola! Acabo de llegar a la granja.\n")
-            f.write(f"{nombre} ({personalidad}): Soy una persona {personalidad}.\n")
+        
+        # En lugar de escribir en datos.txt, podrías insertar una entrada inicial en la memoria de chat
+        bienvenida = f"¡Hola! Acabo de llegar a la granja. Soy una persona {personalidad}."
+        ejecutar_consulta("INSERT INTO memoria_chat (usuario, npc, mensaje, respuesta_ia) VALUES (?, ?, ?, ?)",
+                          (session['user'], nombre, "Sistema: Nacimiento", bienvenida))
+        
         return redirect(url_for('perfiles'))
+    # ... resto del código
     return render_template_string(f'''
         {ESTILOS}
         <div class="dialog-box">
@@ -248,4 +254,5 @@ if __name__ == '__main__':
     puerto = int(os.environ.get("PORT", 5000))
     # Escuchamos en 0.0.0.0 para que sea accesible públicamente
     app.run(host='0.0.0.0', port=puerto)
+
 
