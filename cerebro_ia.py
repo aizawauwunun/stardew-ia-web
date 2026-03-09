@@ -65,48 +65,31 @@ modelo.eval()
 historial = "" # Memoria para que entienda el contexto del chat
 print("\n" + "="*30 + "\n¡IA DE PUEBLO PELÍCANO LISTA PARA MODS!\n" + "="*30)
 
-while True:
-    usuario = input("\nTú: ")
-    if usuario.lower() == "salir": break
-    
-    # Añadimos tu mensaje al historial para que la IA sepa de qué están hablando
-    historial += f"Tú: {usuario}\nIA: "
-    
-    # Tomamos los últimos 600 caracteres para no saturar la memoria
+def generar_respuesta_stardew(mensaje_usuario):
+    global historial
+    # Añadimos el mensaje al historial
+    historial += f"Tú: {mensaje_usuario}\nIA: "
     contexto_reciente = historial[-600:]
     
-    # Convertimos a tensor y aseguramos la dimensión correcta para el LSTM
     entrada = torch.tensor([stoi.get(c, 0) for c in contexto_reciente], dtype=torch.long).unsqueeze(0)
-    print("IA: ", end="")
-    
     h = None
     respuesta_ia = ""
     
     with torch.no_grad():
-        # Procesamos el contexto inicial
         logits, h = modelo(entrada, h)
-        
-        # Generamos la respuesta letra por letra
         for _ in range(350):
-            # Filtro Top-K para mantener la coherencia
             v, _ = torch.topk(logits[:, -1, :], 5)
             logits_f = logits[:, -1, :].clone()
             logits_f[logits_f < v[:, [-1]]] = -float('Inf')
             
-            # Temperatura 1.1: El balance entre naturalidad y orden
             probs = torch.softmax(logits_f / 1.1, dim=-1)
             proximo = torch.multinomial(probs, 1)
             
             letra = itos[proximo.item()]
-            print(letra, end="", flush=True)
             respuesta_ia += letra
             
-            # Si la IA hace un salto de línea, termina su turno
             if letra == "\n": break
-            
-            # Pasamos la letra generada al modelo (CORRECCIÓN DE DIMENSIÓN)
             logits, h = modelo(proximo, h)
             
-    # Guardamos la respuesta en el historial para el siguiente turno
     historial += respuesta_ia + "\n"
-    print("\n" + "-"*30)
+    return respuesta_ia.strip()
