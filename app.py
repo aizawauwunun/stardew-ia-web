@@ -137,10 +137,16 @@ def nuevo_hijo():
         </div>
     ''')
 
+
 @app.route('/')
 def home():
-    if 'user' not in session: return redirect(url_for('login'))
+    # Si entras sin sesión, te loguea automáticamente como Alexia Admin
+    if 'user' not in session:
+        session['user'] = "Alexia"
+        session['plan'] = "admin"
+
     boton_admin = '<a href="/admin_panel" class="btn" style="background:#ffd700;">⚙️ Panel de Alcalde</a>' if session.get('plan') == 'admin' else ""
+    
     return render_template_string(f'''
         {ESTILOS}
         <div class="dialog-box">
@@ -153,23 +159,38 @@ def home():
         </div>
     ''')
 
+
 @app.route('/perfiles')
 def perfiles():
-    if 'user' not in session: return redirect(url_for('login'))
+    # Asegura que la sesión exista para evitar errores de base de datos
+    if 'user' not in session:
+        session['user'] = "Alexia"
+
+    # Genera los botones de los 41 habitantes
     botones_vecinos = "".join([f'<a href="/npc/{k}" class="btn" style="border-left:10px solid {v["color"]};">{v["nombre"]}</a>' for k,v in HABITANTES.items()])
-    hijos = ejecutar_consulta("SELECT nombre FROM hijos_custom WHERE usuario = ?", (session['user'],), fetchall=True)
-    botones_hijos = "".join([f'<a href="/chat/{h[0]}" class="btn" style="border-left:10px solid #ffcc00; background:#fff3d6;">👶 {h[0]}</a>' for h in hijos])
+    
+    # Busca si tienes hijos registrados en la base de datos
+    hijos_data = ejecutar_consulta("SELECT nombre FROM hijos_custom WHERE usuario = ?", (session['user'],), fetchall=True)
+    botones_hijos = "".join([f'<a href="/chat/{h[0]}" class="btn" style="border-left:10px solid #ffcc00; background:#fff3d6;">👶 {h[0]}</a>' for h in hijos_data]) if hijos_data else ""
+    
     return render_template_string(f'''
         {ESTILOS}
         <div class="dialog-box">
             <h2>Vecinos del Pueblo</h2>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">{botones_vecinos}</div>
-            {"<h2 style='margin-top:20px;'>Tus Hijos</h2>" if hijos else ""}
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">{botones_hijos}</div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
+                {botones_vecinos}
+            </div>
+            
+            {"<h2 style='margin-top:20px;'>Tus Hijos</h2>" if botones_hijos else ""}
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
+                {botones_hijos}
+            </div>
+            
             <a href="/nuevo_hijo" class="btn" style="background:#bdecb6; margin-top:15px;">+ Registrar Hijo/a</a>
             <a href="/" class="btn" style="margin-top:10px;">Volver al Inicio</a>
         </div>
     ''')
+
 
 @app.route('/npc/<name>')
 def npc(name):
@@ -187,6 +208,7 @@ def npc(name):
             <a href="/perfiles" class="btn">Atrás</a>
         </div>
     ''')
+
 
 @app.route('/chat/<name>', methods=['GET', 'POST'])
 def chat(name):
@@ -223,6 +245,7 @@ def chat(name):
         </div>
     ''')
 
+
 @app.route('/logout')
 def logout():
     session.clear()
@@ -247,6 +270,7 @@ def admin_panel():
         </div>
     ''')
 
+
 # --- INICIO DE LA APP (ESTO ES LO MÁS IMPORTANTE PARA RENDER) ---
 if __name__ == '__main__':
     inicializar_tablas()
@@ -254,5 +278,6 @@ if __name__ == '__main__':
     puerto = int(os.environ.get("PORT", 5000))
     # Escuchamos en 0.0.0.0 para que sea accesible públicamente
     app.run(host='0.0.0.0', port=puerto)
+
 
 
