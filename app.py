@@ -1,23 +1,9 @@
 from flask import Flask, request, jsonify, render_template_string
-import sqlite3
 import os
-from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 
-# --- 1. CONFIGURACIÓN ---
-RUTA_BASE = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(RUTA_BASE, "stardew_saas.db")
-
-PERSONAJES_RPG = {
-    "Alex": "Deportista y egocéntrico.", "Elliott": "Escritor romántico.", "Harvey": "Médico miedoso.",
-    "Sam": "Músico alegre.", "Sebastian": "Programador introvertido.", "Shane": "Rudo que ama gallinas.",
-    "Abigail": "Aventurera mística.", "Emily": "Espiritual y costurera.", "Haley": "Fotógrafa de moda.",
-    "Leah": "Artista del bosque.", "Maru": "Científica inventora.", "Penny": "Tímida y educada.",
-    "Robin": "Carpintera alegre.", "Willy": "Pescador experto."
-}
-
-# --- 2. DISEÑO MANDARINA GARANTIZADO (PIXELADO) ---
+# --- DISEÑO PIXELADO MANDARINA ---
 DISENO_MANTENIMIENTO = '''
 <!DOCTYPE html>
 <html lang="es">
@@ -28,109 +14,120 @@ DISENO_MANTENIMIENTO = '''
     <style>
         body {
             margin: 0; padding: 0;
-            background: linear-gradient(to bottom, #ffd18a 0%, #ff8f29 100%);
+            background: #60a5fa; /* Cielo */
             font-family: 'Courier New', Courier, monospace;
             display: flex; justify-content: center; align-items: center;
-            height: 100vh; overflow: hidden; image-rendering: pixelated;
+            height: 100vh; overflow: hidden;
+            image-rendering: pixelated;
         }
-        .mandarin-world { position: relative; width: 100%; height: 100%; }
-        
+
+        /* FONDO PIXELADO: MONTAÑAS Y ÁRBOLES */
+        .world {
+            position: absolute; width: 100%; height: 100%;
+            background: 
+                /* Flores y Mandarinas en el suelo */
+                radial-gradient(circle, #ff8800 2px, transparent 1px) 10px 10px / 40px 40px,
+                radial-gradient(circle, #ff55ee 1px, transparent 1px) 25px 25px / 30px 30px,
+                /* Suelo de hierba */
+                linear-gradient(to bottom, transparent 70%, #5ba339 70%);
+            z-index: 1;
+        }
+
+        /* MONTAÑAS CON TEXTURA */
         .mountains {
-            position: absolute; bottom: 0; width: 100%; height: 350px;
-            background: #e67a00; /* Naranja tierra para el valle */
-            clip-path: polygon(0% 100%, 20% 50%, 45% 75%, 70% 40%, 100% 100%);
-            z-index: 1; border-top: 5px solid #ff9933;
+            position: absolute; bottom: 30%; width: 100%; height: 40%;
+            background: #4b8a2d;
+            clip-path: polygon(0% 100%, 15% 20%, 35% 60%, 55% 10%, 80% 50%, 100% 20%, 100% 100%);
+            box-shadow: inset 0 20px 0 #6ab446;
+            z-index: 2;
         }
-        
-        .mandarin-trees {
-            position: absolute; bottom: 150px; left: 0; width: 100%; height: 100px;
-            background-image: radial-gradient(circle, #ffa500 15%, transparent 16%), radial-gradient(circle, #55aa33 45%, transparent 46%);
-            background-size: 60px 60px; z-index: 2;
+
+        /* ÁRBOLES DE MANDARINA (Puntos naranjas sobre verde) */
+        .tree {
+            position: absolute; bottom: 30%; width: 60px; height: 80px;
+            background: #2d5a27; border-radius: 10px 10px 0 0;
+            box-shadow: 
+                inset -10px -10px #1e3f1a,
+                4px 10px #ff8800, -8px 25px #ff8800, 10px 40px #ff8800; /* Las mandarinas */
+            z-index: 3;
         }
-        
-        .flower-field {
-            position: absolute; bottom: 0; left: 0; width: 100%; height: 120px;
-            background-image: radial-gradient(circle, #ff55cc 10%, transparent 11%), radial-gradient(circle, #ffffff 10%, transparent 11%), radial-gradient(circle, #aa33ff 10%, transparent 11%);
-            background-size: 20px 20px; background-color: #aaee44; z-index: 3;
-        }
-        
+
+        /* MANDARINAS VOLADORAS PIXELADAS */
         .winged-mandarin {
-            position: absolute; width: 25px; height: 25px;
-            background: radial-gradient(circle, #ff8800 60%, #cc6600 61%);
-            border-radius: 50%; z-index: 5;
-            animation: fly 6s infinite ease-in-out;
+            position: absolute; width: 20px; height: 18px;
+            background: #ff8800; border: 2px solid #000;
+            box-shadow: -10px -5px #fff, 10px -5px #fff; /* Alas simples pixel */
+            z-index: 5; animation: fly 5s infinite linear;
         }
-        
-        .winged-mandarin::before, .winged-mandarin::after {
-            content: ''; position: absolute; width: 15px; height: 10px;
-            background: #ffffff; top: 0px; border-radius: 50%;
-        }
-        .winged-mandarin::before { left: -18px; transform: rotate(-30deg); }
-        .winged-mandarin::after { right: -18px; transform: rotate(30deg); }
-        
+
         @keyframes fly {
-            0% { left: 10%; top: 40%; } 25% { left: 30%; top: 30%; }
-            50% { left: 50%; top: 45%; } 75% { left: 70%; top: 35%; } 100% { left: 10%; top: 40%; }
+            0% { transform: translate(-100vw, 20vh); }
+            100% { transform: translate(100vw, 10vh); }
         }
-        
-        .dialog-container { text-align: center; z-index: 10; margin-top: -50px; position: relative; }
-        
-        .chica-mandarina-icon {
-            width: 120px; height: 120px; margin-bottom: 20px;
-            border-radius: 50%; border: 6px solid #ff8800;
-            image-rendering: pixelated; box-shadow: 0 0 15px rgba(255, 136, 0, 0.7);
+
+        /* CONTENEDOR CENTRAL (IMAGEN + DIÁLOGO) */
+        .main-ui {
+            position: relative; z-index: 10;
+            display: flex; flex-direction: column; align-items: center;
+            gap: 15px;
         }
-        
+
+        .avatar {
+            width: 120px; height: 120px;
+            border: 6px solid #633524;
+            border-radius: 10px;
+            background: #fff;
+            image-rendering: pixelated;
+        }
+
         .dialog-box {
-            background: #f5deb3; border: 4px solid #cc6600;
-            padding: 20px; width: 380px; box-shadow: 6px 6px 0px rgba(0,0,0,0.2);
+            background: #e5b061; border: 6px solid #633524;
+            padding: 20px; width: 320px; text-align: center;
+            box-shadow: 8px 8px 0 rgba(0,0,0,0.3);
             position: relative;
         }
-        
-        .decor-mandarin {
-            position: absolute; width: 30px; height: 30px;
-            background: radial-gradient(circle, #ffaa00 60%, transparent 61%);
-            border-radius: 50%; z-index: 11;
+
+        /* MANDARINAS DE DECORACIÓN EN EL CUADRO */
+        .corner-mandarin {
+            position: absolute; width: 25px; height: 25px;
+            background: #ff8800; border: 3px solid #633524; border-radius: 4px;
         }
-        .decor-mandarin::before {
-            content: ''; position: absolute; width: 15px; height: 15px;
-            background: #4ac94a; border-radius: 5px 15px 5px 15px;
-            top: -5px; left: 5px;
+        .leaf {
+            position: absolute; width: 10px; height: 6px;
+            background: #4ac94a; top: -8px; left: 5px;
         }
-        
-        .decor-top-left { top: -20px; left: -20px; }
-        .decor-bottom-right { bottom: -20px; right: -20px; }
-        
-        p { color: #5c3317; font-weight: bold; margin: 0; font-size: 1.2em; }
-        .title { font-size: 0.9em; font-style: italic; color: #8b4513; margin-top: 10px; }
+
+        p { color: #3c2015; font-weight: bold; margin: 5px 0; font-size: 1.1em; line-height: 1.2; }
+        .footer { font-size: 0.8em; color: #633524; opacity: 0.8; }
     </style>
 </head>
 <body>
-    <div class="mandarin-world">
-        <div class="winged-mandarin" style="animation-delay: 0s;"></div>
-        <div class="winged-mandarin" style="animation-delay: 2s; top: 30%; animation-duration: 8s;"></div>
-        <div class="winged-mandarin" style="animation-delay: 4s; left: 60%; top: 25%;"></div>
+    <div class="world"></div>
+    <div class="mountains"></div>
+    
+    <div class="tree" style="left: 10%;"></div>
+    <div class="tree" style="left: 25%; bottom: 28%; scale: 0.8;"></div>
+    <div class="tree" style="right: 15%;"></div>
+    
+    <div class="winged-mandarin" style="animation-delay: 0s; top: 15%;"></div>
+    <div class="winged-mandarin" style="animation-delay: 2.5s; top: 25%;"></div>
+
+    <div class="main-ui">
+        <img src="https://raw.githubusercontent.com/aizawauwunun/stardew-ia-web/main/Gemini_Generated_Image_p43yd2p43yd2p43y.jpg" class="avatar">
         
-        <div class="mountains"></div>
-        <div class="mandarin-trees"></div>
-        <div class="flower-field"></div>
-        
-        <div class="dialog-container">
-            <img src="https://lh3.googleusercontent.com/pw/AP1GczMVY7p_q8P1K4b5bC6u8S3Y9R8U_U0N0f9mG0v1E2r3T4b5S6u8S3=w1024" class="chica-mandarina-icon" alt="Chica Mandarina">
-            <div class="dialog-box">
-                <div class="decor-mandarin decor-top-left"></div>
-                <div class="decor-mandarin decor-bottom-right"></div>
-                <p>¡Hola! Soy la Chica Mandarina.</p>
-                <p>El equipo está cultivando el Valle, ¡vuelve pronto!</p>
-                <p class="title">[ Aviso de la Chica Mandarina ]</p>
-            </div>
+        <div class="dialog-box">
+            <div class="corner-mandarin" style="top: -15px; left: -15px;"><div class="leaf"></div></div>
+            <div class="corner-mandarin" style="bottom: -15px; right: -15px;"><div class="leaf"></div></div>
+            
+            <p>¡Hola! Soy la Chica Mandarina.</p>
+            <p>El equipo está cultivando el Valle, ¡vuelve pronto!</p>
+            <p class="footer">Aviso de la Chica Mandarina</p>
         </div>
     </div>
 </body>
 </html>
 '''
 
-# --- 3. RUTAS ---
 @app.before_request
 def modo_privado():
     if request.path.startswith('/static'): return None
@@ -140,7 +137,6 @@ def modo_privado():
 def home():
     return "OK"
 
-# --- 4. ARRANQUE ---
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
