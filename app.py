@@ -141,6 +141,12 @@ def inicializar_tablas():
     ejecutar_consulta("CREATE TABLE IF NOT EXISTS hijos_custom (id INTEGER PRIMARY KEY AUTOINCREMENT, usuario TEXT, nombre TEXT, personalidad TEXT)")
     ejecutar_consulta("INSERT OR IGNORE INTO usuarios (id, plan) VALUES (?, ?)", ("Alexia", "admin"))
 
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('home'))
+
+
 if __name__ == '__main__':
     inicializar_tablas()
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)), debug=True)
