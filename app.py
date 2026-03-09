@@ -3,8 +3,10 @@ import os
 from flask import Flask, request, render_template_string, session, redirect, url_for
 from cerebro_ia import generar_respuesta_stardew
 
-# 1. RUTA DE LA BASE DE DATOS
-DB_PATH = r"C:\Users\pizar\Stardew_IA_Project\stardew_saas.db"
+# 1. RUTA DE LA BASE DE DATOS (AJUSTADA PARA RENDER)
+# En Render no usamos C:\Users..., usamos una ruta relativa para que funcione en Linux
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, "stardew_saas.db")
 
 def ejecutar_consulta(query, params=(), fetchone=False, fetchall=False):
     conn = sqlite3.connect(DB_PATH)
@@ -20,7 +22,8 @@ def ejecutar_consulta(query, params=(), fetchone=False, fetchall=False):
         conn.close()
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "stardew_v_77_security")
+# Usamos una clave secreta segura desde las variables de entorno de Render
+app.secret_key = os.environ.get("SECRET_KEY", "stardew_v_77_security_fallback")
 
 # --- CONFIGURACIÓN ---
 ADMIN_EMAIL = "cuentasoloparajuegos0909@gmail.com"
@@ -93,25 +96,18 @@ ESTILOS = f'''
 </style>
 '''
 
-# --- PASO 1: ESTA ES LA RUTA NUEVA ---
 @app.route('/nuevo_hijo', methods=['GET', 'POST'])
 def nuevo_hijo():
     if 'user' not in session: return redirect(url_for('login'))
     if request.method == 'POST':
         nombre = request.form['nombre']
         personalidad = request.form['personalidad']
-        
-        # 1. Guardar en la base de datos SQL
         ejecutar_consulta("INSERT INTO hijos_custom (usuario, nombre, personalidad) VALUES (?, ?, ?)", 
                           (session['user'], nombre, personalidad))
-        
-        # 2. ENSEÑARLE A LA IA: Guardamos la "semilla" del personaje en datos.txt
         with open('datos.txt', 'a', encoding='utf-8') as f:
             f.write(f"\n{nombre} ({personalidad}): ¡Hola! Acabo de llegar a la granja.\n")
             f.write(f"{nombre} ({personalidad}): Soy una persona {personalidad}.\n")
-        
         return redirect(url_for('perfiles'))
-
     return render_template_string(f'''
         {ESTILOS}
         <div class="dialog-box">
@@ -124,15 +120,11 @@ def nuevo_hijo():
             <a href="/perfiles">Cancelar</a>
         </div>
     ''')
-# --- RUTAS DE NAVEGACIÓN ---
 
 @app.route('/')
 def home():
     if 'user' not in session: return redirect(url_for('login'))
-    
-    # Botón dorado que solo ve el admin
     boton_admin = '<a href="/admin_panel" class="btn" style="background:#ffd700;">⚙️ Panel de Alcalde</a>' if session.get('plan') == 'admin' else ""
-    
     return render_template_string(f'''
         {ESTILOS}
         <div class="dialog-box">
@@ -148,23 +140,16 @@ def home():
 @app.route('/perfiles')
 def perfiles():
     if 'user' not in session: return redirect(url_for('login'))
-    
-    # Botones de NPCs normales
     botones_vecinos = "".join([f'<a href="/npc/{k}" class="btn" style="border-left:10px solid {v["color"]};">{v["nombre"]}</a>' for k,v in HABITANTES.items()])
-    
-    # BUSCAR HIJOS EN LA BASE DE DATOS
     hijos = ejecutar_consulta("SELECT nombre FROM hijos_custom WHERE usuario = ?", (session['user'],), fetchall=True)
     botones_hijos = "".join([f'<a href="/chat/{h[0]}" class="btn" style="border-left:10px solid #ffcc00; background:#fff3d6;">👶 {h[0]}</a>' for h in hijos])
-
     return render_template_string(f'''
         {ESTILOS}
         <div class="dialog-box">
             <h2>Vecinos del Pueblo</h2>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">{botones_vecinos}</div>
-            
             {"<h2 style='margin-top:20px;'>Tus Hijos</h2>" if hijos else ""}
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">{botones_hijos}</div>
-            
             <a href="/nuevo_hijo" class="btn" style="background:#bdecb6; margin-top:15px;">+ Registrar Hijo/a</a>
             <a href="/" class="btn" style="margin-top:10px;">Volver al Inicio</a>
         </div>
@@ -190,113 +175,66 @@ def npc(name):
 @app.route('/chat/<name>', methods=['GET', 'POST'])
 def chat(name):
     if 'user' not in session: return redirect(url_for('login'))
-    
-    # Buscamos si es un NPC normal o un Hijo
     char = HABITANTES.get(name.lower())
     if not char:
         hijo = ejecutar_consulta("SELECT nombre FROM hijos_custom WHERE nombre = ?", (name,), fetchone=True)
         if hijo:
-            char = {"nombre": hijo[0], "color": "#ffcc00"} # Color dorado para los hijos
+            char = {"nombre": hijo[0], "color": "#ffcc00"}
         else:
             return redirect(url_for('perfiles'))
-
     respuesta = ""
     user_data = ejecutar_consulta("SELECT plan, mensajes_hoy FROM usuarios WHERE id = ?", (session['user'],), fetchone=True)
+    if not user_data: return redirect(url_for('login'))
     plan, mensajes_hoy = user_data[0], user_data[1]
-    
     limite = 10 if plan == "free" else 9999
     bloqueado = mensajes_hoy >= limite
-
     if request.method == 'POST' and not bloqueado:
         user_msg = request.form.get('msg')
-        # PASAMOS EL NOMBRE para que la IA sepa con quién hablas
         respuesta = generar_respuesta_stardew(user_msg, name)
-        
         ejecutar_consulta("INSERT INTO memoria_chat (usuario, npc, mensaje, respuesta_ia) VALUES (?, ?, ?, ?)", (session['user'], name, user_msg, respuesta))
         ejecutar_consulta("UPDATE usuarios SET mensajes_hoy = mensajes_hoy + 1 WHERE id = ?", (session['user'],))
-        
     return render_template_string(f'''
         {ESTILOS}
         <div class="dialog-box">
             <h3 style="color:{char['color']}">{char['nombre']}</h3>
             <p style="font-size:0.7em;">Mensajes hoy: {mensajes_hoy}/{limite if limite < 9000 else "∞"}</p>
-            
             <div style="background:#fff3d6; padding:15px; margin:15px 0; border:2px solid #633524; text-align:left;">
                 {respuesta if respuesta else "*(Te mira esperando...)*"}
             </div>
-
             {"<p style='color:red;'>¡Has agotado tus mensajes diarios!</p>" if bloqueado else 
             '<form method="POST"><input name="msg" placeholder="Dile algo..." required><button type="submit" class="btn">Enviar</button></form>'}
-            
             <a href="/perfiles">Atrás</a>
         </div>
     ''')
+
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for('home'))
-# --- BLOQUE DE SEGURIDAD: CREAR TABLAS SI NO EXISTEN ---
-def inicializar_tablas():
-    # Tabla de usuarios
-    ejecutar_consulta('''
-        CREATE TABLE IF NOT EXISTS usuarios (
-            id TEXT PRIMARY KEY,
-            password_hash TEXT,
-            plan TEXT,
-            mensajes_hoy INTEGER DEFAULT 0
-        )
-    ''')
-    # Tabla de memoria de chat
-    ejecutar_consulta('''
-        CREATE TABLE IF NOT EXISTS memoria_chat (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            usuario TEXT,
-            npc TEXT,
-            mensaje TEXT,
-            respuesta_ia TEXT,
-            fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    # Tabla de hijos personalizados
-    ejecutar_consulta('''
-        CREATE TABLE IF NOT EXISTS hijos_custom (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            usuario TEXT,
-            nombre TEXT,
-            personalidad TEXT,
-            color TEXT DEFAULT '#ffcc00'
-        )
-    ''')
 
-# --- INICIO DE LA APP ---
+def inicializar_tablas():
+    ejecutar_consulta('''CREATE TABLE IF NOT EXISTS usuarios (id TEXT PRIMARY KEY, password_hash TEXT, plan TEXT, mensajes_hoy INTEGER DEFAULT 0)''')
+    ejecutar_consulta('''CREATE TABLE IF NOT EXISTS memoria_chat (id INTEGER PRIMARY KEY AUTOINCREMENT, usuario TEXT, npc TEXT, mensaje TEXT, respuesta_ia TEXT, fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
+    ejecutar_consulta('''CREATE TABLE IF NOT EXISTS hijos_custom (id INTEGER PRIMARY KEY AUTOINCREMENT, usuario TEXT, nombre TEXT, personalidad TEXT, color TEXT DEFAULT '#ffcc00')''')
+
 @app.route('/admin_panel')
 def admin_panel():
-    # Solo tú puedes entrar si estás logueado con tu correo de admin
-    if session.get('plan') != 'admin':
-        return "Acceso Denegado: Solo para el Alcalde del pueblo.", 403
-    
+    if session.get('plan') != 'admin': return "Acceso Denegado", 403
     usuarios = ejecutar_consulta("SELECT id, plan, mensajes_hoy FROM usuarios", fetchall=True)
     chats = ejecutar_consulta("SELECT usuario, npc, mensaje, respuesta_ia, fecha FROM memoria_chat ORDER BY fecha DESC LIMIT 50", fetchall=True)
-    
     return render_template_string(f'''
         {ESTILOS}
         <div class="dialog-box" style="width: 800px;">
-            <h2>Panel del Alcalde (Admin)</h2>
-            <div style="text-align:left; background: white; padding: 10px; margin-bottom: 20px; border: 3px solid #633524;">
-                <h3>Usuarios Registrados</h3>
-                <ul>
-                    {"".join([f"<li>{u[0]} | Plan: {u[1]} | Mensajes: {u[2]}</li>" for u in usuarios])}
-                </ul>
-            </div>
-            <div style="text-align:left; background: white; padding: 10px; border: 3px solid #633524; max-height: 300px; overflow-y: auto;">
-                <h3>Últimos 50 Mensajes</h3>
-                {"".join([f"<p><b>{c[0]} -> {c[1]}:</b> {c[2]} <br> <i style='color:blue;'>{c[3]}</i></p><hr>" for c in chats])}
-            </div>
-            <a href="/" class="btn">Volver al Inicio</a>
+            <h2>Panel del Alcalde</h2>
+            {"".join([f"<p>{u[0]} | {u[1]}</p>" for u in usuarios])}
+            <a href="/" class="btn">Volver</a>
         </div>
     ''')
+
+# --- INICIO DE LA APP (ESTO ES LO MÁS IMPORTANTE PARA RENDER) ---
 if __name__ == '__main__':
-    inicializar_tablas() # Crea las tablas antes de arrancar
-    app.run(debug=True)
-
-
+    inicializar_tablas()
+    # Render usa la variable de entorno PORT
+    puerto = int(os.environ.get("PORT", 5000))
+    # Escuchamos en 0.0.0.0 para que sea accesible públicamente
+    app.run(host='0.0.0.0', port=puerto)
