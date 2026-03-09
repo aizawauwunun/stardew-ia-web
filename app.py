@@ -227,7 +227,38 @@ def chat(name):
 def logout():
     session.clear()
     return redirect(url_for('home'))
-
+# --- BLOQUE DE SEGURIDAD: CREAR TABLAS SI NO EXISTEN ---
+def inicializar_tablas():
+    # Tabla de usuarios
+    ejecutar_consulta('''
+        CREATE TABLE IF NOT EXISTS usuarios (
+            id TEXT PRIMARY KEY,
+            password_hash TEXT,
+            plan TEXT,
+            mensajes_hoy INTEGER DEFAULT 0
+        )
+    ''')
+    # Tabla de memoria de chat
+    ejecutar_consulta('''
+        CREATE TABLE IF NOT EXISTS memoria_chat (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            usuario TEXT,
+            npc TEXT,
+            mensaje TEXT,
+            respuesta_ia TEXT,
+            fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    # Tabla de hijos personalizados
+    ejecutar_consulta('''
+        CREATE TABLE IF NOT EXISTS hijos_custom (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            usuario TEXT,
+            nombre TEXT,
+            personalidad TEXT,
+            color TEXT DEFAULT '#ffcc00'
+        )
+    ''')
 
 # --- INICIO DE LA APP ---
 @app.route('/admin_panel')
@@ -259,3 +290,4 @@ def admin_panel():
 if __name__ == '__main__':
     inicializar_tablas() # Crea las tablas antes de arrancar
     app.run(debug=True)
+
