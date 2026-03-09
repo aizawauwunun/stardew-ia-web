@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import os
+import sqlite3
 
 # 1. PREPARACIÓN DE DATOS (Historia del Jardín)
 with open('datos.txt', 'r', encoding='utf-8') as f:
@@ -60,24 +61,34 @@ else:
 
     torch.save(modelo.state_dict(), 'cerebro_ia.pth')
 
-# 4. MOTOR DE DIÁLOGO STARDEW (MEMORIA Y REACCIÓN)
+# 4. MOTOR PARA LA WEB (CONEXIÓN CON FLASK Y SQL)
 modelo.eval()
-historial = "" # Memoria para que entienda el contexto del chat
-print("\n" + "="*30 + "\n¡IA DE PUEBLO PELÍCANO LISTA PARA MODS!\n" + "="*30)
+DB_PATH = r"C:\Users\pizar\Stardew_IA_Project\stardew_saas.db"
 
-def generar_respuesta_stardew(mensaje_usuario):
-    global historial
-    # Añadimos el mensaje al historial
-    historial += f"Tú: {mensaje_usuario}\nIA: "
-    contexto_reciente = historial[-600:]
-    
-    entrada = torch.tensor([stoi.get(c, 0) for c in contexto_reciente], dtype=torch.long).unsqueeze(0)
+def generar_respuesta_stardew(mensaje_usuario, nombre_npc):
+    # BUSCAMOS SI ES UN HIJO EN LA DB
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT personalidad FROM hijos_custom WHERE nombre = ?", (nombre_npc,))
+    resultado = cursor.fetchone()
+    conn.close()
+
+    # Si es hijo, inyectamos su personalidad al modelo
+    if resultado:
+        personalidad = resultado[0]
+        contexto = f"{nombre_npc} ({personalidad}): {mensaje_usuario}\nIA: "
+    else:
+        contexto = f"{nombre_npc}: {mensaje_usuario}\nIA: "
+
+    # Convertimos el texto a números para tu LSTM
+    entrada = torch.tensor([stoi.get(c, 0) for c in contexto], dtype=torch.long).unsqueeze(0)
     h = None
     respuesta_ia = ""
-    
+
     with torch.no_grad():
         logits, h = modelo(entrada, h)
-        for _ in range(350):
+        
+        for _ in range(200): # Límite de letras
             v, _ = torch.topk(logits[:, -1, :], 5)
             logits_f = logits[:, -1, :].clone()
             logits_f[logits_f < v[:, [-1]]] = -float('Inf')
@@ -86,10 +97,9 @@ def generar_respuesta_stardew(mensaje_usuario):
             proximo = torch.multinomial(probs, 1)
             
             letra = itos[proximo.item()]
+            if letra == "\n": break
             respuesta_ia += letra
             
-            if letra == "\n": break
             logits, h = modelo(proximo, h)
-            
-    historial += respuesta_ia + "\n"
-    return respuesta_ia.strip()
+
+    return respuesta_ia
