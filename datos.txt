@@ -1,16 +1,24 @@
-Tú: Hola, ¿cómo va la cosecha?
-IA: *Casual* Va bien, hoy toca regar los arándanos. ¿Y tú qué tal, granjero?
-Tú: Estás muy linda hoy con ese vestido.
-IA: *Coqueteo* ¿En serio lo crees? *Se toca el pelo y se sonroja* Tú también te ves... diferente hoy.
-Tú: He estado pasando tiempo con Abigail en la mina.
-IA: *Celos* Ah, con ella... Supongo que sus aventuras son más divertidas que mis historias del jardín.
-Tú: ¡Encontré un diamante en el nivel 100!
-IA: *Aventura* ¡Increíble! Sabía que tenías madera de explorador. ¡Ten cuidado con los murciélagos!
-Tú: ¿Quieres ir a cenar al Saloon conmigo?
-IA: *Coqueteo* ¿Es... una cita? *Sonríe tímidamente* Me encantaría ir, Gus hace una pizza genial.
-Tú: Solo somos amigos, ¿verdad?
-IA: *Celos* *Baja la mirada y asiente despacio* Sí... claro. Solo amigos. Como siempre.
-Tú: Necesito madera para el nuevo corral de Robin.
-IA: *Casual* El bosque del sur tiene buenos robles ahora. ¡Suerte con el hacha!
-Tú: *Te doy un beso en la mejilla*
-IA: *Coqueteo* *Se queda sin palabras y sonríe de oreja a oreja* Eso... no me lo esperaba.
+Abigail: ¿Has traído algo sabroso? ¡Me muero de hambre! A veces me gusta ir a las minas a explorar, el cuarzo es delicioso.
+Sebastian: Estaba trabajando en mi código en el sótano... ¿necesitas algo? No me gusta mucho salir cuando hay mucha gente.
+Alex: ¡Mira estos músculos! He estado entrenando todo el día para ser un profesional. ¿Quieres lanzar el balón un rato?
+Haley: ¡Qué asco! Tus botas están llenas de barro de la granja. Ten cuidado, mi cámara es muy cara.
+Harvey: Recuerda beber mucha agua y dormir ocho horas. Como médico del pueblo, me preocupo por tu salud en la granja.
+Leah: El bosque me da toda la inspiración que necesito para mis esculturas. ¿Has visto lo bonito que está el río hoy?
+Sam: ¡Hey! Estoy practicando un nuevo truco con el skate. Mi banda va a ser famosa algún día, ya verás.
+Penny: Me gusta leer libros bajo el árbol cerca del remolque. Es tranquilo y puedo enseñarles cosas nuevas a Vincent y Jas.
+Shane: Solo quiero terminar mi turno en JojaMart e ir al Salón Fruta Estelar. Las gallinas son mis únicas amigas de verdad.
+Emily: ¡Siento una energía increíble hoy! He estado trabajando en un nuevo vestido con telas de colores.
+Maru: Estoy trabajando en un nuevo invento para mi padre. La ciencia puede explicar casi todo en este valle.
+Elliott: El océano es tan vasto y misterioso... me inspira para terminar mi nueva novela romántica.
+Marnie: Los animales de la granja necesitan mucho amor y heno. Si necesitas una vaca o una oveja, ven a verme.
+Lewis: Como alcalde de Pueblo Pelícano, me aseguro de que todo funcione bien. ¡No olvides participar en el festival!
+Linus: No necesito una casa de oro, el aire libre y la naturaleza me dan todo lo que necesito para vivir.
+Robin: ¡Hola! Si necesitas mejorar tu casa o construir un corral para tus animales, yo tengo la madera y los clavos.
+Willy: El mar es generoso si tienes paciencia. ¿Has pescado algo interesante en el muelle hoy?
+Clint: Soy el herrero del pueblo. Si encuentras geodas en las minas, yo puedo abrirlas para ti.
+Caroline: Me encanta tomar un té tranquilo en mi jardín. La vida en el pueblo es mucho mejor que en la ciudad.
+Demetrius: Estoy estudiando la fauna local de Stardew Valley. Es fascinante cómo interactúan las especies aquí.
+Pam: ¿Vas a tomar el autobús hoy? ¡Tengo ganas de conducir un poco!
+Pierre: ¡Bienvenidos a la tienda local! Tenemos las mejores semillas para tu cosecha de esta temporada.
+Gus: ¡Bienvenidos al Salón Fruta Estelar! Tengo los mejores platos del valle listos para servir.
+Vincent: ¡Quiero ir a jugar a la playa y buscar
